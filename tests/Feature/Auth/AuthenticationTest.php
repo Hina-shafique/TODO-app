@@ -3,9 +3,12 @@
 namespace Tests\Feature\Auth;
 
 use App\Models\User;
+use Event;
+use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
 use Tests\TestCase;
+use App\Enum\UserRole;
 
 class AuthenticationTest extends TestCase
 {
@@ -18,6 +21,27 @@ class AuthenticationTest extends TestCase
         $response
             ->assertOk()
             ->assertSeeVolt('pages.auth.login');
+    }
+
+    public function test_ratelimiter_to_throttle()
+    {
+        $user = User::factory()->create();
+
+        Event::fake([Lockout::class]);
+
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'wrong-password');
+
+        for ($i = 0; $i < 6; $i++) {
+            $component->call('login');
+        }
+
+        Event::assertDispatched(Lockout::class);
+
+        $component
+            ->assertHasErrors(['form.email'])
+            ->assertNoRedirect();
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void
@@ -52,6 +76,14 @@ class AuthenticationTest extends TestCase
             ->assertNoRedirect();
 
         $this->assertGuest();
+    }
+
+    public function test_guest_layout_can_be_rendered(): void
+    {
+        $response = $this->get('/login');
+
+        $response
+            ->assertOk();
     }
 
     public function test_navigation_menu_can_be_rendered(): void

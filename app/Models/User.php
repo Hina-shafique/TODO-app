@@ -53,11 +53,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isAdmin(): bool
     {
-        return $this->role === 'admin';
+        return $this->role === UserRole::ADMIN;
     }
 
     public function isMember(): bool
     {
-        return $this->role === 'member';
+        return $this->role === UserRole::MEMBER;
     }
 }

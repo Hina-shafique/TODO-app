@@ -16,6 +16,9 @@
         <include>
             <directory>app</directory>
         </include>
+        <exclude>
+            <file>./app/View/Components/GuestLayout.php</file>
+        </exclude>
     </source>
     <php>
         <env name="APP_ENV" value="testing"/>
@@ -32,4 +35,9 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
+    <coverage>
+        <report>
+            <html outputDirectory="coverage"/>
+        </report>
+    </coverage>
 </phpunit>
