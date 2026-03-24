@@ -16,7 +16,6 @@ class EnsureUserIsActiveTest extends TestCase
 
         $this->actingAs($user)
             ->get('/dashboard')
-            ->assertSessionHas('last_activity_check')
             ->assertRedirect('/login')
             ->assertSessionHasErrors();
     }

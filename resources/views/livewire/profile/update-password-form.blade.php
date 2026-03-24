@@ -20,13 +20,15 @@ new class extends Component
         try {
             $validated = $this->validate([
                 'current_password' => ['required', 'string', 'current_password'],
-                'password' => ['required', 'string', Password::defaults(), 'confirmed'],
+                'password' => ['required', 'string', Password::defaults(), 'confirmed', 'different:current_password'],
             ]);
         } catch (ValidationException $e) {
             $this->reset('current_password', 'password', 'password_confirmation');
 
             throw $e;
         }
+
+         Auth::logoutOtherDevices($validated['current_password']);
 
         Auth::user()->update([
             'password' => Hash::make($validated['password']),

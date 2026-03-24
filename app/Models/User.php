@@ -9,6 +9,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+
+/**
+ * @property UserRole $role
+ */
+
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -53,11 +58,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isAdmin(): bool
     {
-        return $this->role === UserRole::ADMIN->value;
+        return $this->role === UserRole::ADMIN;
     }
 
     public function isMember(): bool
     {
-        return $this->role === UserRole::MEMBER->value;
+        return $this->role === UserRole::MEMBER;
     }
 }

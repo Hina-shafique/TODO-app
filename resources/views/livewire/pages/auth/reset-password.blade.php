@@ -58,12 +58,12 @@ new #[Layout('layouts.guest')] class extends Component
         // the application's home authenticated view. If there is an error we can
         // redirect them back to where they came from with their error message.
         if ($status != Password::PASSWORD_RESET) {
-            $this->addError('email', __($status));
+            $this->addError('email', 'password reset failed');
 
             return;
         }
 
-        Session::flash('status', __($status));
+        Session::flash('status', 'Password has been reset');
 
         $this->redirectRoute('login', navigate: true);
     }

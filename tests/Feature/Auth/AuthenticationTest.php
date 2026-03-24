@@ -8,7 +8,6 @@ use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Volt\Volt;
 use Tests\TestCase;
-use App\Enum\UserRole;
 
 class AuthenticationTest extends TestCase
 {
@@ -116,6 +115,26 @@ class AuthenticationTest extends TestCase
             ->assertNoRedirect();
 
         $this->assertGuest();
+    }
+
+    public function test_remember_me_functionality_works()
+    {
+        $user = User::factory()->create();
+
+        $component = Volt::test('pages.auth.login')
+            ->set('form.email', $user->email)
+            ->set('form.password', 'password')
+            ->set('form.remember', true);
+
+        $component->call('login');
+
+        $this->assertNotNull($user->fresh()->remember_token);
+
+        $component
+            ->assertHasNoErrors()
+            ->assertRedirect(route('dashboard', absolute: false));
+
+        $this->assertAuthenticated();
     }
 
     public function test_users_can_logout(): void
