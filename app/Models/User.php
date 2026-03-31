@@ -28,6 +28,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'role',
         'is_active',
     ];
 
@@ -54,6 +55,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'role' => UserRole::class,
             'is_active' => 'boolean',
         ];
+    }
+
+    public function canAccessPanel(\Filament\Panel $panel) : bool
+    {
+        return $this->isAdmin();
     }
 
     public function isAdmin(): bool

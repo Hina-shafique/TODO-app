@@ -22,4 +22,13 @@ class UserTest extends TestCase
         $this->assertFalse($user->isAdmin());
         $this->assertTrue($user->isMember());
     }
+
+    public function test_can_access_admin_panel()
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $member = User::factory()->create(['role' => 'member']);
+
+        $this->assertTrue($admin->canAccessPanel(new \Filament\Panel()));
+        $this->assertFalse($member->canAccessPanel(new \Filament\Panel()));
+    }
 }
