@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 new #[Layout('layouts.guest')] class extends Component
 {
@@ -18,6 +20,16 @@ new #[Layout('layouts.guest')] class extends Component
 
             return;
         }
+
+        if (RateLimiter::tooManyAttempts('resend-verification-email' . Auth::id(), 5)) {
+            $seconds = RateLimiter::availableIn('resend-verification-email' . Auth::id());
+
+            throw ValidationException::withMessages([
+                'email' => __('Too many requests. Please try again in :seconds seconds.', ['seconds' => $seconds]),
+            ])->status(429);
+        }
+
+        RateLimiter::hit('resend-verification-email' . Auth::id(), 60);
 
         Auth::user()->sendEmailVerificationNotification();
 

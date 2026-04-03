@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\ValidationException;
 
 new #[Layout('layouts.guest')] class extends Component {
     public string $name = '';
@@ -16,6 +18,13 @@ new #[Layout('layouts.guest')] class extends Component {
 
     public function register(): void
     {
+        if (RateLimiter::tooManyAttempts('registration' . request()->ip(), 5)) {
+            $seconds = RateLimiter::availableIn('registration' . request()->ip());
+
+            throw ValidationException::withMessages([
+                'email' => __('Too many registration attempts. Please try again in :seconds seconds.', ['seconds' => $seconds]),
+            ])->status(429);
+        }
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s-]+$/u'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
@@ -24,6 +33,8 @@ new #[Layout('layouts.guest')] class extends Component {
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['role'] = 'member';
+
+        RateLimiter::hit('registration' . request()->ip());
 
         event(new Registered($user = User::create($validated)));
 
