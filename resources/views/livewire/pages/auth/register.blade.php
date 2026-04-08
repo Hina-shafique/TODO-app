@@ -9,10 +9,15 @@ use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Livewire\WithFileUploads;
 
 new #[Layout('layouts.guest')] class extends Component {
+
+    use WithFileUploads;
+
     public string $name = '';
     public string $email = '';
+    public $avatar = null;
     public string $password = '';
     public string $password_confirmation = '';
 
@@ -28,8 +33,13 @@ new #[Layout('layouts.guest')] class extends Component {
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s-]+$/u'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,jpg,png', 'max:1024'],
             'password' => ['required', 'string', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        if ($this->avatar) {
+            $validated['avatar'] = $this->avatar->store('avatars', 'public');
+        }
 
         $validated['password'] = Hash::make($validated['password']);
         $validated['role'] = 'member';
@@ -60,6 +70,21 @@ new #[Layout('layouts.guest')] class extends Component {
             <x-text-input wire:model="email" id="email" class="block mt-1 w-full" type="email" name="email" required
                 autocomplete="username" />
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        </div>
+
+        <!-- Avatar -->
+        <div class="mt-4">
+            <x-input-label for="avatar" :value="__('Avatar')" />
+
+            @if ($avatar)
+                <div class="mb-2 mt-4">
+                    <img src="{{ $avatar->temporaryUrl() }}" alt="Avatar Preview"
+                        class="w-20 h-20 rounded-full object-cover border" />
+                </div>
+            @endif
+
+            <x-text-input wire:model="avatar" id="avatar" type="file" class="block mt-1 w-full" />
+            <x-input-error :messages="$errors->get('avatar')" class="mt-2" />
         </div>
 
         <!-- Password -->
