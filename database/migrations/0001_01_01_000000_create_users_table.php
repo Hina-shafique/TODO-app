@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('role')->default('member');
             $table->string('avatar')->nullable();
+            $table->string('timezone')->default('UTC');
             $table->boolean('is_active')->default(true)->index();
             $table->rememberToken();
             $table->timestamps();

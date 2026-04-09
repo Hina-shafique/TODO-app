@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \Illuminate\Http\Middleware\SetCacheHeaders::class,
             \App\Http\Middleware\ContentSecurityPolicy::class,
+            \App\Http\Middleware\SetUserTimeZone::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

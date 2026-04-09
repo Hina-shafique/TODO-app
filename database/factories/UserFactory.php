@@ -31,6 +31,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => 'member',
             'avatar' => null,
+            'timezone' => 'UTC',
             'is_active' => true,
         ];
     }
