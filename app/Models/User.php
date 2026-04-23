@@ -59,7 +59,7 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function canAccessPanel(\Filament\Panel $panel) : bool
+    public function canAccessPanel(\Filament\Panel $panel): bool
     {
         return $this->isAdmin();
     }
@@ -72,5 +72,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isMember(): bool
     {
         return $this->role === UserRole::MEMBER;
+    }
+
+    public function todos()
+    {
+        return $this->hasMany(Todo::class);
     }
 }

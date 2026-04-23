@@ -1,10 +1,11 @@
 <?php
 
-namespace Tests\Unit\Models;
+namespace Tests\Feature\Models;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
 use Tests\TestCase;
+use App\Models\Todo;
 
 class UserTest extends TestCase
 {
@@ -30,5 +31,15 @@ class UserTest extends TestCase
 
         $this->assertTrue($admin->canAccessPanel(new \Filament\Panel()));
         $this->assertFalse($member->canAccessPanel(new \Filament\Panel()));
+    }
+
+    public function test_user_has_many_todos(): void
+    {
+        $user = User::factory()->create();
+        $todo1 = Todo::factory()->create(['user_id' => $user->id]);
+        $todo2 = Todo::factory()->create(['user_id' => $user->id]);
+
+        $this->assertTrue($user->todos->contains($todo1));
+        $this->assertTrue($user->todos->contains($todo2));
     }
 }

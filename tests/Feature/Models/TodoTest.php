@@ -1,12 +1,10 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Models;
 
 use App\Models\Todo;
 use App\Models\User;
 use Tests\TestCase;
-use App\Enum\TodoStatus;
-use App\Enum\TodoPriority;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class TodoTest extends TestCase

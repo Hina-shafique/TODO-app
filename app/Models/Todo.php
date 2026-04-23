@@ -11,6 +11,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 
+/**
+ * @property TodoStatus $status
+ * @property TodoPriority $priority
+ */
+
 class Todo extends Model
 {
     /** @use HasFactory<\Database\Factories\TodoFactory> */
