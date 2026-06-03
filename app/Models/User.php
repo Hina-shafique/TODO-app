@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Enum\UserRole;
+use App\Models\Todo;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
@@ -74,8 +77,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->role === UserRole::MEMBER;
     }
 
-    public function todos()
+    public function todos(): HasMany
     {
         return $this->hasMany(Todo::class);
+    }
+
+    public function bookmarks(): BelongsToMany
+    {
+        return $this->belongsToMany(Todo::class, 'bookmarks')->withTimestamps();
+    }
+
+    public function hasBookmarked(Todo $todo): bool
+    {
+        return $this->bookmarks()->wherePivot('todo_id', $todo->id)->exists();
     }
 }

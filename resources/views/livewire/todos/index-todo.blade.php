@@ -16,19 +16,41 @@
         </thead>
         <tbody>
             @foreach($todos as $todo)
-                <tr>
-                    <td class="py-4 px-4">{{ $todo->title }}</td>
-                    <td class="py-4 px-4">{{ $todo->description }}</td>
-                    <td class="py-4 px-4">{{ $todo->priority->value }}</td>
-                    <td class="py-4 px-4">{{ $todo->due_date }}</td>
-                    <td class="py-4 px-4">{{ $todo->status->value }}</td>
-                    <td class="py-4 px-4">
-                        <button wire:click="edit({{ $todo->id }})"
-                            class="bg-blue-500 text-white px-3 py-1 rounded">Edit</button>
-                        <button wire:click="delete({{ $todo->id }})"
-                            class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
-                    </td>
-                </tr>
+                    <tr>
+                        <td class="py-4 px-4">{{ $todo->title }}</td>
+                        <td class="py-4 px-4">{{ $todo->description }}</td>
+                        <td class="py-4 px-4">{{ $todo->priority->value }}</td>
+                        <td class="py-4 px-4">{{ $todo->due_date }}</td>
+                        <td class="py-4 px-4">
+                            <button wire:click="toggleStatus({{ $todo->id }})"
+                                class="px-3 py-1 rounded-full text-xs font-semibold transition-colors duration-200 
+                                    {{ $todo->status === \App\Enum\TodoStatus::COMPLETED ? 'bg-green-100 text-green-800 hover:bg-green-200' :
+                                    ($todo->status === \App\Enum\TodoStatus::IN_PROGRESS ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-gray-100 text-gray-800 hover:bg-gray-200') }}">
+                                    {{ ucfirst(str_replace('_', ' ', $todo->status->value)) }}
+                            </button>
+                        </td>
+                        <td class="py-6 px-4 flex space-x-2 justify-center">
+                            <button wire:click="edit({{ $todo->id }})"
+                                class="bg-blue-500 text-white px-3 py-1 rounded">Edit</button>
+                            <button wire:click="delete({{ $todo->id }})"
+                                class="bg-red-500 text-white px-3 py-1 rounded">Delete</button>
+                            <button wire:click="toggleBookmark({{ $todo->id }})" wire:loading.attr="disabled"
+                                class="px-2 py-1 rounded flex items-center justify-center"
+                                aria-label="{{ in_array($todo->id, $bookmarkedIds) ? 'Remove bookmark' : 'Add bookmark' }}" title="{{ in_array($todo->id, $bookmarkedIds) ? 'Remove bookmark' : 'Add bookmark' }}">
+                                @if(in_array($todo->id, $bookmarkedIds))
+                                    <!-- filled bookmark -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M5 3a2 2 0 00-2 2v12l7-4 7 4V5a2 2 0 00-2-2H5z" />
+                                    </svg>
+                                @else
+                                    <!-- outline bookmark -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-4 7 4V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+                                    </svg>
+                                @endif
+                            </button>
+                        </td>
+                    </tr>
             @endforeach
         </tbody>
     </table>

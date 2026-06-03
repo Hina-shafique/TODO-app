@@ -2,6 +2,7 @@
 
 use App\Livewire\Todos\CreateTodo;
 use App\Livewire\Todos\IndexTodo;
+use App\Livewire\Users\UserBookmarks;
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Todos\EditTodo;
 
@@ -20,5 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::get('todo/create', CreateTodo::class)->name('todos.create');
     Route::get('todo/{todo}/edit', EditTodo::class)->name('todos.edit');
 });
+
+Route::get('/users/{user}/bookmarks', UserBookmarks::class)->name('users.bookmarks');
 
 require __DIR__ . '/auth.php';
