@@ -2,24 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use App\Enum\TodoStatus;
 use App\Enum\TodoPriority;
-use App\Models\User;
+use App\Enum\TodoStatus;
+use Database\Factories\TodoFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property TodoStatus $status
  * @property TodoPriority $priority
+ * @property Carbon|null $due_date
  */
-
 class Todo extends Model
 {
-    /** @use HasFactory<\Database\Factories\TodoFactory> */
+    /** @use HasFactory<TodoFactory> */
     use HasFactory, SoftDeletes;
 
     /**

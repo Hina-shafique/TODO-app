@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Livewire;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
-use App\Models\Todo;
-use Livewire\Livewire;
 use App\Livewire\Users\UserBookmarks;
+use App\Models\Todo;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
 
 class UserBookmarksPageTest extends TestCase
 {
@@ -25,8 +25,8 @@ class UserBookmarksPageTest extends TestCase
         $userA->bookmarks()->attach([$todoA1->id, $todoA2->id]);
         $userB->bookmarks()->attach($todoB1->id);
 
-        // Test as visitor viewing userA bookmarks
-        Livewire::test(UserBookmarks::class, ['user' => $userA])
+        Livewire::actingAs($userA)
+            ->test(UserBookmarks::class, ['user' => $userA])
             ->assertSee($todoA1->title)
             ->assertSee($todoA2->title)
             ->assertDontSee($todoB1->title);

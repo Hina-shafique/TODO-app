@@ -2,12 +2,12 @@
 
 namespace Tests\Feature\Models\Todos;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
-use App\Models\User;
-use App\Models\Todo;
 use App\Enum\TodoPriority;
 use App\Livewire\Todos\EditTodo;
+use App\Models\Todo;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -27,10 +27,10 @@ class EditTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(EditTodo::class, ['todo' => $todo])
-            ->set('title', 'updated todo')
-            ->set('description', 'An updated description.')
-            ->set('due_date', '2027-01-31')
-            ->set('priority', TodoPriority::HIGH->value)
+            ->set('form.title', 'updated todo')
+            ->set('form.description', 'An updated description.')
+            ->set('form.due_date', '2027-01-31')
+            ->set('form.priority', TodoPriority::HIGH->value)
             ->call('editTodo')
             ->assertRedirect(route('todos.index'));
 
@@ -50,7 +50,7 @@ class EditTest extends TestCase
 
         $todo = Todo::factory()->create([
             'user_id' => $user->id,
-            'title' => 'private task'
+            'title' => 'private task',
         ]);
 
         Livewire::actingAs($otherUser)
