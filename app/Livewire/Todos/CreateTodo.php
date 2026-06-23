@@ -4,48 +4,45 @@ namespace App\Livewire\Todos;
 
 use App\Enum\TodoPriority;
 use App\Enum\TodoStatus;
-use Illuminate\Validation\Rules\Enum;
+use App\Livewire\Forms\TodoForm;
 use Illuminate\Support\Facades\Auth;
-use Livewire\Component;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Create Todo')]
 class CreateTodo extends Component
 {
-    public $title;
-    public $description;
-    public $due_date;
-    public $priority = 'medium';
+    public TodoForm $form;
 
-    protected function rules(): array
+    public function mount(): void
     {
-        return [
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'due_date' => ['nullable', 'date', 'after_or_equal:today'],
-            'priority' => ['required', new Enum(TodoPriority::class)],
-        ];
+        $this->form->status = TodoStatus::PENDING->value;
     }
 
-    public function createTodo()
+    public function createTodo(): void
     {
-        $validated = $this->validate();
+        $validated = $this->form->validate();
 
         Auth::user()->todos()->create([
             'title' => $validated['title'],
-            'description' => $validated['description'],
-            'due_date' => $validated['due_date'],
+            'description' => $validated['description'] ?: null,
+            'due_date' => $validated['due_date'] ?: null,
             'priority' => $validated['priority'],
             'status' => TodoStatus::PENDING,
         ]);
 
         session()->flash('message', 'Todo created successfully.');
-        return redirect()->route('todos.index');
+
+        $this->redirectRoute('todos.index');
     }
+
     public function render()
     {
         return view('livewire.todos.create-todo', [
             'priorities' => TodoPriority::cases(),
+            'form' => $this->form,
         ]);
     }
 }

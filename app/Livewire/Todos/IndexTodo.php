@@ -2,46 +2,32 @@
 
 namespace App\Livewire\Todos;
 
-use Auth;
-use Carbon\Carbon;
 use App\Enum\TodoStatus;
+use App\Models\Todo;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Todo;
 
 #[Layout('layouts.app')]
+#[Title('My Todos')]
 class IndexTodo extends Component
 {
     use WithPagination;
 
-    public function edit(int $id)
+    public function delete(Todo $todo): void
     {
-        return redirect()->route('todos.edit', $id);
-    }
-
-    public function delete(Todo $todo)
-    {
-        if ($todo->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('delete', $todo);
         $todo->delete();
         session()->flash('message', 'Todo deleted successfully.');
     }
-    public function render()
-    {
-        return view('livewire.todos.index-todo', [
-            'todos' => Auth::user()->todos()->latest()->paginate(10),
-            'bookmarkedIds' => Auth::user()->bookmarks()->pluck('bookmarks.todo_id')->toArray(),
-        ]);
-    }
 
-    public function toggleStatus(Todo $todo)
+    public function toggleStatus(Todo $todo): void
     {
-        if ($todo->user_id !== auth()->id()) {
-            abort(403);
-        }
-        
+        $this->authorize('toggleStatus', $todo);
+
         $nextStatus = match ($todo->status) {
             TodoStatus::PENDING => TodoStatus::IN_PROGRESS,
             TodoStatus::IN_PROGRESS => TodoStatus::COMPLETED,
@@ -54,7 +40,7 @@ class IndexTodo extends Component
         ]);
     }
 
-    public function toggleBookmark(Todo $todo)
+    public function toggleBookmark(Todo $todo): void
     {
         abort_unless(Auth::check(), 403);
 
@@ -67,5 +53,19 @@ class IndexTodo extends Component
             $user->bookmarks()->attach($todo->id);
             session()->flash('message', 'Bookmarked successfully.');
         }
+    }
+
+    public function render()
+    {
+        return view('livewire.todos.index-todo', [
+            'todos' => Auth::user()
+                ->todos()
+                ->latest()
+                ->paginate(10),
+            'bookmarkedIds' => Auth::user()
+                ->bookmarks()
+                ->pluck('bookmarks.todo_id')
+                ->toArray(),
+        ]);
     }
 }

@@ -2,28 +2,30 @@
 
 namespace Tests\Feature\Livewire;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
-use App\Models\Todo;
-use Livewire\Livewire;
-use App\Livewire\Todos\IndexTodo;
 use App\Enum\TodoStatus;
+use App\Livewire\Todos\IndexTodo;
+use App\Models\Todo;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+use Tests\TestCase;
 
 class IndexTodoActionsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_edit_redirects_to_edit_route(): void
+    public function test_render_shows_todos_for_authenticated_user(): void
     {
         $user = User::factory()->create();
-        $todo = Todo::factory()->create(['user_id' => $user->id]);
+        $todos = Todo::factory()->count(3)->create(['user_id' => $user->id]);
 
         $this->actingAs($user);
 
         Livewire::test(IndexTodo::class)
-            ->call('edit', $todo->id)
-            ->assertRedirect(route('todos.edit', $todo->id));
+            ->assertViewHas('todos', function ($paginatedTodos) use ($todos) {
+                return $paginatedTodos->count() === 3
+                    && $paginatedTodos->contains($todos->first());
+            });
     }
 
     public function test_delete_soft_deletes_when_owner(): void

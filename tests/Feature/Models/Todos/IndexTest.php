@@ -5,9 +5,9 @@ namespace Tests\Feature\Models\Todos;
 use App\Livewire\Todos\IndexTodo;
 use App\Models\Todo;
 use App\Models\User;
-use livewire\Livewire;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use livewire\Livewire;
 use Tests\TestCase;
 
 class IndexTest extends TestCase
@@ -61,16 +61,4 @@ class IndexTest extends TestCase
 
         $this->assertDatabaseHas('todos', ['id' => $todo->id]);
     }
-
-    public function test_edit_todo_redirects(): void
-    {
-        $user = User::factory()->create();
-        $todo = Todo::factory()->create(['user_id' => $user->id]);
-
-        Livewire::actingAs($user)
-            ->test(IndexTodo::class)
-            ->call('edit', $todo->id)
-            ->assertRedirect(route('todos.edit', $todo->id));
-    }
-
 }

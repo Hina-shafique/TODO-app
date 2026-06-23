@@ -4,55 +4,55 @@ namespace App\Livewire\Todos;
 
 use App\Enum\TodoPriority;
 use App\Enum\TodoStatus;
-use Illuminate\Validation\Rules\Enum;
-use Illuminate\Support\Facades\Auth;
-use Livewire\Attributes\Layout;
+use App\Livewire\Forms\TodoForm;
 use App\Models\Todo;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
 #[Layout('layouts.app')]
+#[Title('Edit Todo')]
 class EditTodo extends Component
 {
     public Todo $todo;
-    public $title;
-    public $description;
-    public $priority;
-    public $status;
-    public $due_date;
-    protected function rules(): array
-    {
-        return [
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'priority' => ['required', new Enum(TodoPriority::class)],
-            'due_date' => ['nullable', 'date'],
-            'status' => ['required', new Enum(TodoStatus::class)],
-        ];
-    }
 
-    public function mount(Todo $todo)
+    public TodoForm $form;
+
+    public function mount(Todo $todo): void
     {
-        if ($todo->user_id !== Auth::user()->id) {
-            abort(403);
-        }
+        $this->authorize('update', $todo);
+
         $this->todo = $todo;
-        $this->title = $todo->title;
-        $this->description = $todo->description;
-        $this->priority = $todo->priority->value;
-        $this->status = $todo->status->value;
-        $this->due_date = $todo->due_date;
-
+        $this->form->title = $todo->title;
+        $this->form->description = $todo->description ?? '';
+        $this->form->priority = $todo->priority->value;
+        $this->form->status = $todo->status->value;
+        $this->form->due_date = $todo->due_date?->format('Y-m-d') ?? '';
     }
 
-    public function editTodo()
+    public function editTodo(): void
     {
-        $validated = $this->validate();
+        $validated = $this->form->validate();
 
-        $this->todo->update($validated);
+        $wasCompleted = $this->todo->status === TodoStatus::COMPLETED;
+        $nowCompleted = $validated['status'] === TodoStatus::COMPLETED->value;
+
+        $this->todo->update([
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?: null,
+            'priority' => $validated['priority'],
+            'status' => $validated['status'],
+            'due_date' => $validated['due_date'] ?: null,
+            'completed_at' => $nowCompleted
+                ? ($wasCompleted ? $this->todo->completed_at : now())
+                : null,
+        ]);
+
         session()->flash('message', 'Todo updated successfully.');
-        return redirect()->route('todos.index');
 
+        $this->redirectRoute('todos.index');
     }
+
     public function render()
     {
         return view('livewire.todos.edit-todo', [
