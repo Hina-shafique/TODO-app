@@ -2,67 +2,42 @@
 
 namespace App\Console\Commands;
 
-use Hash;
-use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Validator;
+use App\Enum\UserRole;
 use App\Models\User;
-use Illuminate\Validation\Rules\Password;
+use Illuminate\Console\Command;
 
 class CreateAdminCommand extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'app:create-admin';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Create a new admin user';
+    protected $description = 'Promote an existing member to admin';
 
-    /**
-     * Execute the console command.
-     */
-    public function handle()
+    public function handle(): int
     {
-        $name = $this->ask('Enter admin name');
-        $email = $this->ask('Enter admin email');
-        $password = $this->secret('Enter admin password');
+        $members = User::where('role', UserRole::MEMBER)->get(['id', 'name', 'email']);
 
-        //validation
-        $validator = validator::make([
-            'name' => $name,
-            'email' => $email,
-            'password' => $password,
-        ], [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', Password::defaults()],
-        ]);
+        if ($members->isEmpty()) {
+            $this->error('No members found to promote.');
 
-        if ($validator->fails()) {
-            $this->info('Admin not created');
-            foreach ($validator->errors()->all() as $error) {
-                $this->error($error);
-            }
             return 1;
         }
 
-        // Create the admin user
-        $admin = User::create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-            'role' => 'admin',
-            'is_active' => true,
-        ]);
-        $this->info('Admin user created successfully!');
-        return 0; // Exit code for success
+        $this->table(['ID', 'Name', 'Email'], $members->toArray());
 
+        $email = $this->ask('Enter the email of the member to promote to admin');
 
+        $user = User::where('email', $email)->where('role', UserRole::MEMBER)->first();
+
+        if (! $user) {
+            $this->error('No member found with that email.');
+
+            return 1;
+        }
+
+        $user->update(['role' => UserRole::ADMIN]);
+
+        $this->info("'{$user->name}' has been promoted to admin.");
+
+        return 0;
     }
 }
