@@ -353,6 +353,44 @@ class TeamTest extends TestCase
             ->assertStatus(403);
     }
 
+    // --- Change role edge cases ---
+
+    public function test_change_role_with_invalid_role_is_ignored(): void
+    {
+        $owner = User::factory()->create();
+        $member = User::factory()->create();
+        $team = Team::factory()->create(['owner_id' => $owner->id]);
+        $team->members()->attach($owner->id, ['role' => TeamRole::ADMIN->value, 'joined_at' => now()]);
+        $team->members()->attach($member->id, ['role' => TeamRole::MEMBER->value, 'joined_at' => now()]);
+
+        Livewire::actingAs($owner)
+            ->test(ShowTeam::class, ['team' => $team])
+            ->call('changeRole', $member->id, 'invalid_role');
+
+        $this->assertDatabaseHas('team_user', [
+            'team_id' => $team->id,
+            'user_id' => $member->id,
+            'role' => TeamRole::MEMBER->value,
+        ]);
+    }
+
+    public function test_cannot_change_owner_role(): void
+    {
+        $owner = User::factory()->create();
+        $team = Team::factory()->create(['owner_id' => $owner->id]);
+        $team->members()->attach($owner->id, ['role' => TeamRole::ADMIN->value, 'joined_at' => now()]);
+
+        Livewire::actingAs($owner)
+            ->test(ShowTeam::class, ['team' => $team])
+            ->call('changeRole', $owner->id, TeamRole::MEMBER->value);
+
+        $this->assertDatabaseHas('team_user', [
+            'team_id' => $team->id,
+            'user_id' => $owner->id,
+            'role' => TeamRole::ADMIN->value,
+        ]);
+    }
+
     // --- User can be in multiple teams ---
 
     public function test_user_can_belong_to_multiple_teams(): void

@@ -1,38 +1,19 @@
 <?php
 
-use App\Livewire\Teams\CreateTeam;
-use App\Livewire\Teams\EditTeam;
-use App\Livewire\Teams\IndexTeam;
-use App\Livewire\Teams\ShowTeam;
-use App\Livewire\Todos\CreateTodo;
-use App\Livewire\Todos\EditTodo;
-use App\Livewire\Todos\IndexTodo;
-use App\Livewire\Todos\ShowTodo;
 use App\Livewire\Users\UserBookmarks;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome');
-
-Route::view('dashboard', 'dashboard')
+Route::view('/', 'dashboard')
     ->middleware(['auth', 'verified', 'active'])
     ->name('dashboard');
 
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
-    
-Route::middleware('auth')->group(function () {
-    Route::get('/todos', IndexTodo::class)->name('todos.index');
-    Route::get('todo/create', CreateTodo::class)->name('todos.create');
-    Route::get('todo/{todo}', ShowTodo::class)->name('todos.show');
-    Route::get('todo/{todo}/edit', EditTodo::class)->name('todos.edit');
-
-    Route::get('/teams', IndexTeam::class)->name('teams.index');
-    Route::get('/teams/create', CreateTeam::class)->name('teams.create');
-    Route::get('/teams/{team}', ShowTeam::class)->name('teams.show');
-    Route::get('/teams/{team}/edit', EditTeam::class)->name('teams.edit');
-});
 
 Route::get('/users/{user}/bookmarks', UserBookmarks::class)->name('users.bookmarks');
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/todos.php';
+require __DIR__.'/teams.php';
+require __DIR__.'/projects.php';
+require __DIR__.'/auth.php';

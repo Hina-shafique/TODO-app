@@ -51,6 +51,18 @@
         </div>
     </div>
 
+    {{-- Projects --}}
+    <div class="bg-white rounded-lg shadow p-5 flex items-center justify-between">
+        <div>
+            <h2 class="text-lg font-semibold text-gray-800">Projects</h2>
+            <p class="text-sm text-gray-500 mt-0.5">{{ $team->projects()->count() }} {{ Str::plural('project', $team->projects()->count()) }}</p>
+        </div>
+        <a href="{{ route('projects.index', $team) }}" wire:navigate
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+            View Projects →
+        </a>
+    </div>
+
     {{-- Members --}}
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <div class="flex justify-between items-center p-5 border-b border-gray-200">

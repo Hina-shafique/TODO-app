@@ -1,361 +1,56 @@
-# TodoApp — Full-Stack Collaborative Task Manager
+# TodoApp — Collaborative Task Manager
 
-A production-grade Laravel 13 application for personal and team-based task management. Built with Livewire 4, Filament 5, Volt, Tailwind CSS, and Pest — with 100% test coverage, SOLID & DRY principles, and hardened security.
-
----
-
-## Table of Contents
-
-- [Current Features](#current-features)
-- [Pre-Phase Improvements](#pre-phase-improvements)
-- [Planned Roadmap](#planned-roadmap)
-- [Architecture Decisions](#architecture-decisions)
-- [Database Schema Plan](#database-schema-plan)
-- [Quality Standards](#quality-standards)
-- [Security Plan](#security-plan)
-- [Performance Plan](#performance-plan)
-- [Tech Stack](#tech-stack)
-- [Local Setup](#local-setup)
-- [Running Tests](#running-tests)
-- [Development Workflow](#development-workflow)
+A full-stack collaborative task management application built with the latest Laravel ecosystem. Designed for teams — create workspaces, assign todos, track projects, schedule meetings, and stay on top of deadlines through a built-in calendar, all without leaving the browser.
 
 ---
 
-## Current Features
-
-These features are fully built and tested.
-
-| Feature | Details |
-|---|---|
-| Authentication | Register, login, email verification, password reset (Breeze + Volt) |
-| User profile | Avatar, timezone, password change |
-| Todo CRUD | Create, edit, delete (soft delete), list with pagination |
-| Todo status | Pending → In Progress → Completed, with `completed_at` timestamp |
-| Todo priority | Low, Medium, High |
-| Due dates | Date picker, overdue scope |
-| Bookmarks | Users can bookmark any todo (many-to-many) |
-| Admin panel | Filament: manage users, activate/deactivate, restore soft-deleted |
-| User roles | All users register as **Member** by default. Use `php artisan app:create-admin` to promote an existing member to Admin. |
-| Policies | Users can only manage their own todos |
-| Middleware | CSP headers, active-user check, timezone setter |
-| Test suite | Pest 4 — feature & unit tests covering auth, todos, bookmarks, admin |
-
----
-
-## Pre-Phase Improvements
-
-These are small but important fixes/additions to complete **before** Phase 1 begins.
-
-### 1. Fix `app:create-admin` Command
-
-Current behaviour: prompts to create a brand-new admin user from scratch.
-Required behaviour: lists existing members, user selects one, that member is promoted to admin.
-
-- Show a table of all `role = member` users (name + email)
-- Prompt to enter the email of the member to promote
-- Validate the email exists and is currently a member
-- Update `role` to `admin`
-- Update existing tests for `CreateAdminCommand`
-
-### 2. Todo Detail Page
-
-Current behaviour: clicking a todo in the list goes to the edit form.
-Required behaviour: clicking a todo opens a dedicated read-only detail page (`/todo/{todo}`).
-
-**The detail page shows:**
-- Title, description
-- Status badge, priority badge
-- Due date + overdue warning if past due
-- `completed_at` timestamp (if completed)
-- Bookmark button
-- Edit button (redirects to edit form)
-- Delete button (with confirmation)
-- *(Phase 3 addition)* Assigned to, team, project — added when those features are built
-
-Route: `GET /todo/{todo}` → `ShowTodo` Livewire component
-Policy: user must own the todo (same as edit)
-Tests: renders detail, shows correct data, 403 for other users' todos
-
----
-
-## Planned Roadmap
-
-Phases are ordered by dependency. Each phase has its own migrations, models, Livewire components, policies, and Pest tests before moving to the next.
-
-### Phase 1 — Teams
-
-**Goal:** Users can create and join multiple teams. Each team has an admin and members.
-
-- `Team` model: `id`, `name`, `slug`, `description`, `avatar`, `owner_id`, soft deletes
-- `team_user` pivot: `team_id`, `user_id`, `role` (admin/member), `joined_at`
-- A user can belong to many teams simultaneously
-- A user can be admin of one team and member of another
-- Team admin can invite members (by email), remove members, change roles
-- Team admin can delete the team (soft delete)
-- Livewire pages: teams list, team detail, manage members
-- Policy: `TeamPolicy` — only team admin can manage, any member can view
-- Filament: `TeamResource` for super-admin oversight
-
-### Phase 2 — Projects
-
-**Goal:** Organize work inside a team with named projects.
-
-- `Project` model: `id`, `team_id`, `name`, `description`, `status` (active/completed/archived), `due_date`, soft deletes
-- Projects always belong to a team — no personal projects
-- Project status follows enum pattern (like `TodoStatus`)
-- Livewire pages: project list per team, project detail, project edit
-- Policy: `ProjectPolicy` — team members can view, team admin can create/edit/delete
-
-### Phase 3 — Todo Assignment
-
-**Goal:** Todos can be assigned to a specific team member and linked to a project.
-
-- Add to `todos` table: `team_id` (nullable FK), `project_id` (nullable FK), `assigned_to` (nullable FK → `users.id`)
-- A todo can be personal (no team) OR team-scoped (has team + optional project + optional assignee)
-- Assigned todos appear in the assignee's personal todo list AND in the team/project view
-- Assignee can update the status of their assigned todo
-- Only team admin or todo creator can reassign or delete
-- `TodoPolicy` updated: cover personal todos AND team-assigned todos separately
-- Personal todos: only owner can touch
-- Team todos: team admin or creator can edit/delete; assignee can update status only
-
-### Phase 4 — Meetings
-
-**Goal:** Teams can schedule meetings that appear on the calendar.
-
-- `Meeting` model: `id`, `team_id`, `title`, `description`, `start_at`, `end_at`, `created_by`, soft deletes
-- Team members can create meetings; team admin can edit/delete any meeting
-- Livewire: create/edit meeting modal, meetings list per team
-- Policy: `MeetingPolicy`
-
-### Phase 5 — Milestones
-
-**Goal:** Projects have milestones with due dates to track progress.
-
-- `Milestone` model: `id`, `project_id`, `title`, `description`, `due_date`, `completed_at`, soft deletes
-- Milestones belong to a project (and by extension, a team)
-- Milestone completion triggers a notification to team admin
-- Policy: `MilestonePolicy` — mirrors `ProjectPolicy`
-
-### Phase 6 — Built-in Calendar
-
-**Goal:** A single calendar view showing all time-based events.
-
-- Livewire calendar component — monthly/weekly view
-- Shows on the calendar:
-  - Personal todos with a `due_date`
-  - Team todos with a `due_date` (for teams the user belongs to)
-  - Team meetings (`start_at` / `end_at`)
-  - Project deadlines (`project.due_date`)
-  - Milestones (`milestone.due_date`)
-- Each event type is colour-coded
-- Clicking an event opens a detail modal
-- No external calendar sync — fully built-in
-
-### Phase 7 — Notifications
-
-**Goal:** Users are notified of key actions via in-app bell and email.
-
-- Use Laravel's built-in `notifications` table + `Notifiable` trait (already on `User`)
-- In-app: bell icon in nav bar with unread count badge; mark all as read
-- Email: queued `Mailable` classes per notification type
-
-**Notification triggers:**
-
-| Event | Who is notified |
-|---|---|
-| Todo assigned to you | Assignee |
-| Todo due date approaching (24h before) | Assignee + todo creator |
-| Todo overdue | Assignee + todo creator |
-| You are invited to a team | Invited user |
-| Your team role is changed | Affected user |
-| Meeting scheduled in your team | All team members |
-| Milestone due date approaching (24h before) | Team admin + project creator |
-| Milestone completed | Team admin |
-
-- Scheduled command: `php artisan notifications:send-reminders` (run via Laravel Scheduler daily)
-- Notification read/unread state stored in `notifications` table (`read_at`)
-
----
-
-## Architecture Decisions
-
-### UI Layer
-- **Livewire-only** — no API, no SPA. Livewire handles all reactive UI.
-- Volt used for simple auth pages (already built).
-- Livewire class-based components for all feature pages (teams, projects, calendar, notifications).
-- Page refreshes are acceptable for collaborative updates (no WebSockets needed).
-
-### State Management
-- All state is server-side in Livewire components and Eloquent models.
-- Alpine.js used only for purely client-side UI (dropdowns, modals, transitions) — no business logic in JS.
-
-### Service Layer (SOLID)
-- Complex business logic lives in dedicated Service classes (`app/Services/`), not in Livewire components.
-- Example: `TodoAssignmentService`, `NotificationDispatchService`, `CalendarEventService`
-- Livewire components stay thin: call the service, handle errors, dispatch events.
-- This keeps Single Responsibility Principle (SRP) and makes services unit-testable in isolation.
-
-### Authorization (Policy-per-model)
-- Every model has a dedicated Policy class.
-- Livewire actions call `$this->authorize()` — no inline permission checks.
-- Policies are the single source of truth for "who can do what."
-
-### DRY
-- Shared form validation lives in Form objects (`app/Livewire/Forms/`).
-- Reusable Blade components in `resources/views/components/` (status badge, priority badge, etc.).
-- Shared query scopes on models, not repeated in components.
-
-### Enum Pattern
-- All status/role/priority fields use PHP 8.1 backed enums in `app/Enum/`.
-- Enums implement `label()` and `color()` methods for consistent UI rendering.
-- Follow the exact same pattern as existing `TodoStatus`, `TodoPriority`, `UserRole`.
-
----
-
-## Database Schema Plan
-
-### New Tables
-
-```
-teams
-  id, name, slug (unique), description, avatar, owner_id (FK users), timestamps, soft_deletes
-
-team_user  (pivot)
-  id, team_id (FK), user_id (FK), role (enum: admin/member), joined_at
-  unique(team_id, user_id)
-
-projects
-  id, team_id (FK), name, description, status (enum), due_date, timestamps, soft_deletes
-
-meetings
-  id, team_id (FK), created_by (FK users), title, description, start_at, end_at, timestamps, soft_deletes
-
-milestones
-  id, project_id (FK), title, description, due_date, completed_at, timestamps, soft_deletes
-```
-
-### Modified Tables
-
-```
-todos  (add columns)
-  + team_id       (nullable FK → teams)
-  + project_id    (nullable FK → projects)
-  + assigned_to   (nullable FK → users)
-```
-
-### Indexes to Add
-
-```
-todos: [team_id], [project_id], [assigned_to], [due_date] (already exists)
-team_user: [team_id, user_id] (unique)
-projects: [team_id], [due_date]
-meetings: [team_id], [start_at]
-milestones: [project_id], [due_date]
-```
-
----
-
-## Quality Standards
-
-### 100% Test Coverage
-
-- Every public method on every model, service, policy, and Livewire component must have a corresponding test.
-- Coverage is verified with: `php artisan test --coverage --min=100`
-- Both happy-path AND sad-path (validation failures, authorization failures, not-found cases) must be covered.
-- Test naming convention: `it('does X when Y')` — behaviour-driven.
-
-### Test Types
-
-| Type | What is tested |
-|---|---|
-| Unit | Models (relationships, scopes, casts), Enums, Service classes in isolation |
-| Feature/Livewire | Component rendering, form submission, actions, authorization |
-| Feature/Policy | Every policy method, every role combination |
-| Feature/Notification | Notification is queued, correct recipients, correct content |
-| Feature/Command | Artisan commands (reminder scheduler, create-admin) |
-
-### Static Analysis
-- Larastan level `max` — no ignored errors.
-- Run: `./vendor/bin/phpstan analyse`
-
-### Code Formatting
-- Laravel Pint enforced before every commit: `vendor/bin/pint --dirty`
-
----
-
-## Security Plan
-
-| Concern | Solution |
-|---|---|
-| Authorization bypass | Every Livewire action calls `$this->authorize()` via Policy |
-| Mass assignment | All models use `$fillable` (not `$guarded`) — explicit opt-in |
-| XSS | Blade `{{ }}` escaping everywhere; `{!! !!}` only for trusted, sanitized content |
-| CSRF | Laravel CSRF tokens on all forms; Livewire handles this automatically |
-| SQL injection | Eloquent query builder only; no raw `DB::statement` with user input |
-| Sensitive routes | Auth + verified + active-user middleware on all app routes |
-| Content Security Policy | `ContentSecurityPolicy` middleware already in place |
-| Email enumeration | Register/forgot-password endpoints use generic responses |
-| File uploads | Avatar uploads validated for mime type, size, and stored outside public root |
-| Inactive users | `EnsureUserIsActive` middleware kicks users out within 5 minutes of deactivation |
-| Team isolation | All team queries scope by `team_id` — users never see other teams' data |
-
----
-
-## Performance Plan
-
-| Concern | Solution |
-|---|---|
-| N+1 queries | Eager-load relationships in Livewire `mount()` and `render()` — verified with Telescope/Debugbar |
-| Calendar query | Single optimized query combining todos, meetings, milestones, deadlines for date range |
-| Pagination | All list views use `->paginate()` — never `->get()` on unbounded collections |
-| Notification count | Cache unread notification count per user for 60 seconds; bust on new notification |
-| Search/filter | Database indexes on all filterable/sortable columns |
-| Scheduled commands | Run on queue (`ShouldQueue`) — never block the web process |
-| Image optimization | Avatar stored as WebP, max 200KB |
+## What It Does
+
+- Personal todo management with priorities, due dates, and status tracking
+- Team workspaces — create teams, invite members, manage roles
+- Project organisation within teams
+- Todo assignment to specific team members and projects
+- Team meeting scheduling
+- Project milestones with progress tracking
+- Built-in calendar aggregating all due dates, meetings, and milestones
+- In-app and email notifications for key events
+- Full admin panel for user and team oversight
 
 ---
 
 ## Tech Stack
 
-| Layer | Package | Version |
+| Layer | Technology | Version |
 |---|---|---|
+| Language | PHP | 8.4 |
 | Framework | Laravel | 13 |
-| PHP | PHP | 8.4 |
-| UI / Reactivity | Livewire | 4 |
+| Reactivity | Livewire | 4 |
 | Single-file components | Volt | 1 |
 | Admin panel | Filament | 5 |
-| CSS | Tailwind CSS | 3 |
+| CSS framework | Tailwind CSS | 3 |
 | Testing | Pest | 4 |
 | Static analysis | Larastan | 3 |
 | Code formatting | Laravel Pint | 1 |
+| Authentication | Laravel Breeze | 2 |
 | Dev tooling | Laravel Boost | 2 |
+| Database | SQLite (dev) / MySQL (prod) | — |
 
 ---
 
-## Local Setup
+## Quick Start
 
 ```bash
-# 1. Clone and install
 git clone <repo>
 cd TodoApp
-composer install
-npm install
+composer install && npm install
 
-# 2. Environment
 cp .env.example .env
 php artisan key:generate
-
-# 3. Database
 php artisan migrate --seed
 
-# 4. Create admin user
-php artisan make:admin
+php artisan app:create-admin
 
-# 5. Build assets
 npm run build
-
-# 6. Serve (via Laravel Herd or artisan)
 php artisan serve
 ```
 
@@ -364,66 +59,5 @@ php artisan serve
 ## Running Tests
 
 ```bash
-# Run all tests (compact output)
 php artisan test --compact
-
-# Run with coverage (requires Xdebug or PCOV)
-php artisan test --coverage --min=100
-
-# Run specific file
-php artisan test --compact --filter=TeamTest
-
-# Static analysis
-./vendor/bin/phpstan analyse
-
-# Format code
-vendor/bin/pint --dirty
 ```
-
----
-
-## Development Order (Summary)
-
-When resuming work, build in this exact order to respect model dependencies:
-
-1. **Phase 1** — Teams (model, pivot, Livewire CRUD, policy, tests)
-2. **Phase 2** — Projects (model, Livewire CRUD within team, policy, tests)
-3. **Phase 3** — Todo assignment (migrations, policy update, UI update, tests)
-4. **Phase 4** — Meetings (model, Livewire CRUD, policy, tests)
-5. **Phase 5** — Milestones (model, Livewire CRUD within project, policy, tests)
-6. **Phase 6** — Calendar (Livewire calendar component, event aggregation service, tests)
-7. **Phase 7** — Notifications (database + email, bell UI, scheduler command, tests)
-8. **Hardening** — Larastan max, 100% coverage verification, performance audit
-
-> Each phase must have passing tests before the next phase starts.
-
----
-
-## Development Workflow
-
-This is the agreed working process for every phase:
-
-```
-1. Claude builds the phase (models, migrations, Livewire, policies, tests)
-2. Tests pass locally (php artisan test --compact)
-3. You test it in the browser — check the golden path and edge cases
-4. You confirm it looks correct
-5. Claude commits to git with a descriptive commit message
-6. Move to the next phase
-```
-
-**Git commit convention:**
-
-```
-feat: Phase N — <short description>
-
-- What was added
-- What was changed
-- Tests added/updated
-```
-
-**Never skip browser testing.** Tests prove the code is correct; the browser proves the feature works for a real user.
-
----
-
-*This README is the living spec for this project. Ask Claude to update it whenever requirements change.*

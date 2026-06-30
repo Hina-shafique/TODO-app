@@ -1,9 +1,9 @@
-<?php 
+<?php
 
 namespace Tests\Feature\Auth;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class EnsureUserIsActiveTest extends TestCase
@@ -15,7 +15,7 @@ class EnsureUserIsActiveTest extends TestCase
         $user = User::factory()->create(['is_active' => false]);
 
         $this->actingAs($user)
-            ->get('/dashboard')
+            ->get('/')
             ->assertRedirect('/login')
             ->assertSessionHasErrors();
     }
@@ -25,7 +25,7 @@ class EnsureUserIsActiveTest extends TestCase
         $user = User::factory()->create(['is_active' => true]);
 
         $this->actingAs($user)
-            ->get('/dashboard')
+            ->get('/')
             ->assertOk();
     }
 }

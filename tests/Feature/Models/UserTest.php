@@ -2,14 +2,17 @@
 
 namespace Tests\Feature\Models;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Models\User;
-use Tests\TestCase;
+use App\Models\Team;
 use App\Models\Todo;
+use App\Models\User;
+use Filament\Panel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class UserTest extends TestCase
 {
     use RefreshDatabase;
+
     public function test_user_role_is_admin(): void
     {
         $user = User::factory()->admin()->create();
@@ -29,8 +32,16 @@ class UserTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $member = User::factory()->create(['role' => 'member']);
 
-        $this->assertTrue($admin->canAccessPanel(new \Filament\Panel()));
-        $this->assertFalse($member->canAccessPanel(new \Filament\Panel()));
+        $this->assertTrue($admin->canAccessPanel(new Panel()));
+        $this->assertFalse($member->canAccessPanel(new Panel()));
+    }
+
+    public function test_user_has_owned_teams(): void
+    {
+        $user = User::factory()->create();
+        $team = Team::factory()->create(['owner_id' => $user->id]);
+
+        $this->assertTrue($user->ownedTeams->contains($team));
     }
 
     public function test_user_has_many_todos(): void
