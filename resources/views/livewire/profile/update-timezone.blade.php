@@ -1,28 +1,28 @@
-<?php 
+<?php
 
 use Livewire\Volt\Component;
+use Livewire\Attributes\Validate;
 use Illuminate\Support\Facades\Auth;
 
 new class extends Component {
-    public $timezone;
+
+    #[Validate('required|string|timezone')]
+    public string $timezone = '';
 
     public function mount(): void
     {
-        $this->timezone = Auth::user()->timezone;
+        $this->timezone = Auth::user()->timezone ?? '';
     }
 
-    public function timezoneUpdate()
+    public function timezoneUpdate(): void
     {
-        $this->validate([
-            'timezone' => ['required', 'string', 'timezone'],
-        ]);
+        $this->validate();
 
-        Auth::user()->update([
-            'timezone' => $this->timezone,
-        ]);
+        Auth::user()->update(['timezone' => $this->timezone]);
 
         $this->dispatch('timezone-updated');
     }
+
 }; ?>
 
 <section>
@@ -44,7 +44,7 @@ new class extends Component {
                     <option value="{{ $tz }}">{{ $tz }}</option>
                 @endforeach
             </select>
-            @error('timezone') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+            @error('timezone') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="flex items-center gap-4">
